@@ -83,9 +83,8 @@ If you suffix any of the functions above with `!`, they will return `⊥` or the
 Also, there are shortcuts for `>(0)` and `<(0)`:
 
 Expr|Meaning
-----|-------
 `a+?`|`a>(0)`
-`a-?`|`a<(0)`
+`a-?`|`a<(0)` 
 
 ### Set operations
 
