@@ -1,5 +1,7 @@
 (import matchable
         (clojurian syntax)
+        (chicken string)
+        (srfi 1)
         (srfi 13)
         (srfi 69))
 
@@ -29,13 +31,25 @@
     (cond
       ((equal? (car rest)  #\" )
        (cons (take (drop chars 1) len)
-             (drop chars (+ 2 len)))
+             (drop chars (+ 2 len))))
       ((and (equal? (car rest) #\\)
             (equal? (cadr rest) #\"))
        (next-char (+ 2 len) (cddr rest)))
-      (else (next-char (+ 1 len) (cdr rest)))))))
+      (else (next-char (+ 1 len) (cdr rest))))))
 
-;; TODO: number pecking
+;; Numbers are like 210 or 210.321. Tested!
+(define (peck-number chars)
+  (let next-char ((len 0) (rest chars) (point-encountered? #f))
+    (case (car rest)
+      ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
+       (next-char (+ 1 len) (cdr rest) point-encountered?))
+      ((#\.)
+       (if point-encountered?
+           (cons (list->string (take chars len)) (drop chars len))
+           (next-char (+ 1 len) (cdr rest) #t)))
+      (else
+        (cons (list->string (take chars len)) (drop chars len))))))
+
 ;; TODO: symbol pecking
 
 
