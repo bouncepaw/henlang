@@ -5,6 +5,12 @@
         (srfi 13)
         (srfi 69))
 
+;; Here are some helper functions.
+(define (ascii-letter? c)
+  (member (->string c)
+          (list "a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m"
+                "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")))
+
 ;; Pecks return Cons of contents of the token and the rest of characters.
 ;; For single char, contents would be nothing and rest would be cdr of input.
 (define (peck-char chars)
@@ -20,10 +26,44 @@
          string-trim))
   (cons taken (drop chars (length taken))))
 
-;; TODO: support of multi-char chars such as `newline.
-;; For now return one character only. This implementation is OK for some time.
+;; Character literals start with ` (backtick).
+;; Supported names for characters are taken from here:
+;; https://www.gnu.org/software/mit-scheme/documentation/mit-scheme-ref/Characters.html
+;; `alarm                 ; U+0007
+;; `backspace             ; U+0008
+;; `delete                ; U+007F
+;; `escape                ; U+001B
+;; `newline               ; the linefeed character, U+000A
+;; `null                  ; the null character, U+0000
+;; `return                ; the return character, U+000D
+;; `space                 ; the preferred way to write a space, U+0020
+;; `tab                   ; the tab character, U+0009
+;; As you can see, most of those characters are useless in modern day
+;; programming but perhaps they will come in handy one day.
+;;
+;; NB. Unlike Scheme, space character can only be expressed by using `space.
+;; Using ` (a real space) is considered harmful.
 (define (peck-character chars)
-  (cons (->string (cadr chars)) (cddr chars)))
+  (define-values (char rest)
+    (if (-> chars cadr ascii-letter?)
+        (let next-char ((len 1) (rest (cdr chars)))
+          (if (ascii-letter? (car rest))
+              (next-char (+ 1 len) (cdr rest))
+              (values (-> chars (take len) (drop 1) list->string)
+                      rest)))
+        (values (-> chars cadr ->string) (cddr chars))))
+  (cond
+    ((or (eq? char "") (eq? char " "))
+     (error 'peck-character "Empty character is illegal")
+     #f)
+    ((member char (list "alarm" "backspace" "delete" "escape" "newline"
+                        "null" "return" "space" "tab"))
+     (cons char rest))
+    ((and (-> char string-length (eq? 1) not)
+          (ascii-letter? char))
+     (error 'peck-character "Unknown character name found" char)
+     #f)
+    (else (cons char rest))))
 
 ;; Based on lex-double-string from Toratau
 (define (peck-string chars)
