@@ -2,7 +2,7 @@
 
 ## Name
 
-The name has many meanings. First of all, *henlang* is short for incompre*hen*sible *lang*uage. Next, *hen* stands for japanese 変 which means *strange*. Finally, *hen* is an animal also known as *chicken*, and [Chicken Scheme](https://call-cc.org) is my favorite Scheme implementation. Perhaps, I'll implement Henlang using it.
+The name has many meanings. First of all, *henlang* is short for incompre*hen*sible *lang*uage. Next, *hen* stands for japanese 変 which means *strange*. Finally, *hen* is an animal also known as *chicken*, and [Chicken Scheme](https://call-cc.org) is my favorite Scheme implementation.
 
 ## Syntax and features
 
@@ -20,12 +20,8 @@ From `%` till end of line.
 Henlang treats several special characters as operators. Unlike functions, they have higher precedence.
 
 - `a←b` assigns value of `b` to `a`. `a` is unevaled.
-- `'a` does not eval `a`. Just like in Scheme.
-- `a:b` returns a cons pair of `a` and `b`. Just like `(cons a b)` in Scheme.
 - `&f` escapes function `f` so it does not get evaluated. Thus, it can be passed as a capital argument.
-- `f/a` reduces function `f` over list `a`.
-- `f#a` maps function `f` to list `a`.
-- `¤ name [var:val ...] { scope }` is just like [let](https://api.call-cc.org/5/doc/scheme/let) in Scheme. The `name` is optional; if `name` is passed, it can be used for recursion. If `var` is a list, return value of `val` is destructured: `¤ [[a, b]:[1, 2]] {}` binds `1` to `a` and `2` to `b`. Last expression in `scope` is returned. If there are no expressions in `scope`, `void` is returned.
+- `¤ name [var val ...] { scope }` is just like [let](https://api.call-cc.org/5/doc/scheme/let) in Scheme. The `name` is optional; if `name` is passed, it can be used for recursion. If `var` is a list, return value of `val` is destructured: `¤ [[a, b] [1, 2]] {}` binds `1` to `a` and `2` to `b`. Last expression in `scope` is returned. If there are no expressions in `scope`, `void` is returned.
 - `λ arg1, arg2... { body }` is lambda. There can be no arguments or an empty `body`.
 
 ### Functions
@@ -48,8 +44,8 @@ Expr | Meaning
 `a-`| `a` negated.
 `a+(n...)` | Sum of `a` and `n`s.
 `a-(n...)` | Difference of `a` and `n`s.
-`a÷(n...)` | `a` divided by `n`s.
-`a×(n...)` | `a` multiplied by `n`s.
+`a/(n...)` | `a` divided by `n`s.
+`a*(n...)` | `a` multiplied by `n`s.
 `a^(n...)` | `a` to power of `n`s.
 `a√` | Square root of `a`.
 `a√(n)` | `n` root of `a`.
@@ -107,7 +103,7 @@ Expr | Meaning
 ### Find all positive numbers in a list
 
 ```
-list←[-3,-2,-1,0,1,2,3]
+list←[3-,2-,1-,0,1,2,3]
 list∃!(+?)$
 % [1,2,3]
 ```
