@@ -20,8 +20,10 @@ From `%` till end of line.
 Henlang treats several special characters as operators. Unlike functions, they have higher precedence.
 
 - `a←b` assigns value of `b` to `a`. `a` is unevaled.
+- `'a` does not eval a. Just like in Scheme.
+- `a:b` returns a cons pair of a and b. Just like `(cons a b)` in Scheme.
 - `&f` escapes function `f` so it does not get evaluated. Thus, it can be passed as a capital argument.
-- `¤ name [var val ...] { scope }` is just like [let](https://api.call-cc.org/5/doc/scheme/let) in Scheme. The `name` is optional; if `name` is passed, it can be used for recursion. If `var` is a list, return value of `val` is destructured: `¤ [[a, b] [1, 2]] {}` binds `1` to `a` and `2` to `b`. Last expression in `scope` is returned. If there are no expressions in `scope`, `void` is returned.
+- `¤ name [var:val ...] { scope }` is just like [let](https://api.call-cc.org/5/doc/scheme/let) in Scheme. The `name` is optional; if `name` is passed, it can be used for recursion. If `var` is a list, return value of `val` is destructured: `¤ [[a, b]:[1, 2]] {}` binds `1` to `a` and `2` to `b`. Last expression in `scope` is returned. If there are no expressions in `scope`, `void` is returned.
 - `λ arg1, arg2... { body }` is lambda. There can be no arguments or an empty `body`.
 
 ### Functions
