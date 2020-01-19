@@ -74,7 +74,62 @@
       [else
         (cons (substring σ 0 id) (substring σ id))])))
 
-;; TODO: symbol pecking
+(define (peck-name σ)
+  (define special-chars (map car token-table))
+  (define one-char-names
+    (string->list "⊤⊥∅+-/*^√=<>≤≥_∈∉∋∌∧∨∪∖∩∀∃"))
+  ;; No λ!
+  (define greek-letters
+    (string->list "ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω"))
+  (define suffices (list "?" "!"))
+  (define (normal-char? γ)
+    (and (not (member γ special-chars))
+         (not (member γ one-char-names))
+         (not (member γ greek-letters))
+         (not (member γ suffices))
+         (not (char=? γ #\→))))
+  (define (count-while-σ s p id)
+    (let loop ((id id))
+      (if (p (string-ref s id))
+          (loop (+ 1 id))
+          id)))
+  (define ((member-λ lst) el) (member el lst))
+  ;; A name follows one of the schemes:
+  ;; | greek_letter* normal_char* suffix?
+  ;; | greek_letter* normal_char* rarrow greek_letter* normal_char* suffix?
+  ;; | greek_letter* 1char_name suffix?
+  (define len 0)
+  ;; Let's walk along and decide what's in the name and what's not.
+  ;; First of all, any name may contain any number of greek letters.
+  (define len (count-while-σ σ (member-λ greek-letters) 0))
+  ;; Then, we fork to two rails.
+  (if (member (string-ref σ len) one-char-names)
+      (begin
+        (set! len (+ 1 len))
+        ;; Here may be a suffix
+        (if (member (string-ref σ (+ 1 len)) suffices)
+            (set! len (+ 1 len)))
+        ;; Anyway, return it the name
+        (cons (substring σ 0 len) (substring σ len)))
+      (begin
+        ;; Any number of normal chars here.
+        (set! len (count-while-σ σ normal-char? len))
+        ;; Here we fork.
+        (if (char=? #\→ (string-ref σ len))
+            (begin
+              ;; Greek letters may be here
+              (set! len (count-while-σ σ (member-λ greek-letters) len))
+              ;; Normal chars may be here
+              (set! len (count-while-σ σ normal-char? len))
+              ;; Here may be a suffix
+              (if (member (string-ref σ (+ 1 len)) suffices)
+                  (set! len (+ 1 len)))
+              (cons (substring σ 0 len) (substring σ len)))
+            (begin
+              ;; Here may be a suffix. If not, one char back.
+              (if (-> σ (string-ref len) (member suffices) not)
+                  (set! len (- len 1)))
+              (cons (substring σ 0 len) (substring σ len)))))))
 
 
 (define token-table
