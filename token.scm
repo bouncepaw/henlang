@@ -1,5 +1,4 @@
-(import utf8
-        matchable
+(import matchable
         regex
         (clojurian syntax)
         (chicken string)
@@ -38,7 +37,7 @@
         (values (substring σ 1 3) (substring 3))
         (values (substring σ 1 2) (substring 2))))
   (cond
-    [(member char (list "\b" "\f" "\n" "\r" "\t" "\v" "\s" "\\"))
+    [(member char (list "\\b" "\\f" "\\n" "\\r" "\\t" "\\v" "\\s" "\\\\"))
      (cons char rest)]
     [(string-prefix? "\\" char)
      (error 'peck-character "No such escape character" char)
