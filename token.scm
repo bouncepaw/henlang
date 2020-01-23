@@ -1,7 +1,10 @@
 (import matchable
         regex
+        utf8
         (clojurian syntax)
+        (chicken pretty-print)
         (chicken string)
+        (chicken io)
         (srfi 1)
         (srfi 13)
         (srfi 69))
@@ -73,6 +76,7 @@
       [else
         (cons (substring σ 0 id) (substring σ id))])))
 
+;; TODO: fix it so it works
 (define (peck-name σ)
   (define special-chars (map car token-table))
   (define one-char-names
@@ -87,8 +91,9 @@
          (not (member γ greek-letters))
          (not (member γ suffices))
          (not (char=? γ #\→))))
-  (define (count-while-σ s p id)
-    (let loop ((id id))
+  (define (count-while-σ s p _id)
+    (let loop ((id _id))
+      (print "iteration")
       (if (p (string-ref s id))
           (loop (+ 1 id))
           id)))
@@ -97,10 +102,11 @@
   ;; | greek_letter* normal_char* suffix?
   ;; | greek_letter* normal_char* rarrow greek_letter* normal_char* suffix?
   ;; | greek_letter* 1char_name suffix?
-  (define len 0)
+  ;;
   ;; Let's walk along and decide what's in the name and what's not.
   ;; First of all, any name may contain any number of greek letters.
   (define len (count-while-σ σ (member-λ greek-letters) 0))
+  (print len)
   ;; Then, we fork to two rails.
   (if (member (string-ref σ len) one-char-names)
       (begin
@@ -151,4 +157,40 @@
     (#\λ       op-lambda     ,peck-none)
     (#\⇒       op-then       ,peck-none)
     (#\;       op-else       ,peck-none)))
+
+(define (σ→tokens inputσ)
+  (define (token-commencer? c)
+    (define special-chars (map car token-table))
+    (member c special-chars))
+  (let loop [(σ inputσ) (acc '())]
+    (cond
+      [(string-null? σ)
+       (reverse acc)]
+      [(token-commencer? (string-ref σ 0))
+       (let* [(alist-entry (alist-ref (string-ref σ 0) token-table))
+              (token-type (car alist-entry))
+              (token-peck-λ (cadr alist-entry))
+              (res (token-peck-λ σ))
+              (token-content (car res))
+              (rest (cdr res))]
+         (loop rest
+               (cons (cons token-type token-content) acc)))]
+      [(char-whitespace? (string-ref σ 0))
+       (loop (substring σ 1) acc)]
+      [(char-numeric? (string-ref σ 0))
+       (let* [(res (peck-number σ))
+              (number-itself (car res))
+              (rest (cdr res))]
+         (loop rest
+               (cons (cons 'number number-itself) acc)))]
+      [else
+        (let* [(res (peck-name σ))
+               (name-itself (car res))
+               (rest (cdr res))]
+          (loop rest
+                (cons (cons 'name name-itself) acc)))]
+      )))
+
+(define text (read-string #f (open-input-file "example.hen")))
+(pretty-print (σ→tokens text))
 
