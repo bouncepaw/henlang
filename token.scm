@@ -1,13 +1,13 @@
 (import matchable
         regex
-        utf8
         (clojurian syntax)
         (chicken pretty-print)
         (chicken string)
         (chicken io)
         (srfi 1)
-        (srfi 13)
-        (srfi 69))
+        (srfi 69)
+        utf8
+        utf8-srfi-13)
 
 ;; Here are some helper functions.
 (define (ascii-letter? c)
@@ -33,7 +33,7 @@
 ;; `\v Vertical tabulator
 ;; `\s Space
 ;; `\\ Backslash
-;; New ones are subject no change.
+;; New ones may be added.
 (define (peck-character σ)
   (define-values (char rest)
     (if (char=? #\\ (string-ref σ 1))
@@ -76,74 +76,39 @@
       [else
         (cons (substring σ 0 id) (substring σ id))])))
 
-;; TODO: fix it so it works
 (define (peck-name σ)
-  (print "pecking" σ "\n")
-  ;; A name follows one of the schemes:
-  ;; | greek_letter* 1char_name suffix?
-  ;; | greek_letter* normal_char* suffix?
-  ;; | greek_letter* normal_char* rarrow greek_letter* normal_char* suffix?
-  ;;
-  ;; Let's walk along and decide what's in the name and what's not.
-  ;; Some helpers:
+  ;; name ::= 1char_name suffix?
+  ;;        | normal_char+ suffix?
   (define ((member-λ lst) el) (member el lst))
-  (define (count-while-σ p start-id)
-    (let loop ((id start-id))
-      (if (p (string-ref σ id))
-          (loop (+ 1 id))
-          id)))
-  ;; Store length of the name to be taken from σ in len.
-  (define len 0)
-  ;; Any name may start with any number of greek letters (except of λ).
-  (define greek?
-    (-> "ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω"
-        string->list
-        member-λ))
-  (set! len (count-while-σ greek? len))
-  ;; Names can't end with a greek letter now. If there is a delimeter next,
-  ;; panic.
   (define delimeter?
-    (-> car
-        (map token-table)
-        (append (string->list " \t\r"))
-        member-λ))
-  (when (delimeter? (string-ref σ len))
-    (error 'peck-name "Name cannot end with a greek letter"
-           (substring σ 0 (+ 1 len))))
-  ;; Now, we have two ways: one one-char-name or any number of normal chars.
-  ;; The normal char seq may be followed by a rarrow and another cluster of
-  ;; greek and normal chars. Either of the ways may end with a suffix.
+    (->> token-table
+         (map car)
+         (append (list #\space #\tab))
+         member-λ))
   (define one-char-name?
     (-> "⊤⊥∅+-/*^√=<>≤≥_∈∉∋∌∧∨∪∖∩∀∃"
         string->list
         member-λ))
   (define suffix?
-    (-> "?!"
+    (-> "?!¿¡⸮"
         string->list
         member-λ))
-  (define (rarrow? c) (char=? c #\→))
   (define (normal-char? c)
-    (not (or (greek? c)
-             (delimeter? c)
+    (not (or (delimeter? c)
              (suffix? c)
-             (rarrow? c))))
-
-  (if (-> σ (string-ref (+ 1 len)) one-char-name?)
-      (set! len (+ 1 len))
-      (begin
-        (set! len (count-while-σ normal-char? len))
-        ;; There may be a rarrow!
-        (when (and #;(> (string-length σ) len)
-                   (-> σ (string-ref len) rarrow?))
-          (print "aaa")
-          (set! len (+ 2 len))
-          (set! len (count-while-σ greek? len))
-          (set! len (count-while-σ normal-char? len)))))
-  ;; Whatever happened, there may be a suffix:
-  (when (-> σ (string-ref (+ 1 len)) suffix?)
-    (set! len (+ 1 len)))
-  (cons (substring σ 0 (+ 1 len)) (substring σ (+ 1 len)))
-  )
+             (one-char-name? c))))
+  
+  (define len
+    (if (one-char-name? (string-ref σ 0))
+        1
+        (let loop ((id 0))
+          (if (normal-char? (string-ref σ id))
+              (loop (+ 1 id))
+              id))))
+  ;; There may be a suffix. Check for it.
+  (when (suffix? (string-ref σ len))
+        (set! len (+ 1 len)))
+  (cons (substring σ 0 len) (substring σ len)))
 
 
 (define token-table
@@ -205,5 +170,5 @@
   (string-append/shared σ "\n"))
 
 (define text (read-string #f (open-input-file "example.hen")))
-(pretty-print (σ→tokens text))
+(pretty-print (σ→tokens (add-safety-belt text)))
 

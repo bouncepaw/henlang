@@ -1,11 +1,25 @@
 % This is an example program in henlang!
 % At current stage of development, this text should tokenize successfully.
-125 1205.3210 () ⇒ ; ←← ':&
+125 1205.3210 () ⇒ ; ←← ':& "" "ora ora"
 % Names test
 kek
 kek1(lol, flex)
+another
+-_--//?->
+token
 σtrim
 σ→α
 σ→αbaseφjoke
+a_
 π∈
+a∈
+a∋
+a*
 ∈
+cons←λa,b{
+  λop{
+    a op(b)
+  }
+}
+car←λa,b{ a }
+cdr←λa,b{ b }

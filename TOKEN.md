@@ -35,23 +35,18 @@ enum Token {
 ## Symbol rules
 
 ```
+name ::= 1char_name suffix?
+       | normal_char+ suffix?
 special_char := // those above
 1char_name := // those described in README.md
-normal_char := // neither special_char nor 1char_names nor greek_letter
-               // nor suffix nor rarrow
-greek_letter := "α".."κ" | "μ".."ω" | "Α" .. "Ω" // no λ
-suffix := "?" | "!"
-rarrow := "→"
-symbol := greek_letter* normal_char* suffix*
-        | greek_letter* normal_char* rarrow normal_char* greek_letter* suffix*
-        | greek_letter* 1char_name suffix*
+normal_char := // neither special_char nor 1char_name nor suffix
+suffix := "?" | "!" | "¿" | "¡" | "⸮"
 ```
 
 ## Number rules
 
 ```
-sign := "+" | "-"
-digit := "0".."9"
-number := sign{,1} digit+ ("." digit+){,1}
+digit  ::= "0".."9"
+number ::= digit+ ("." digit+){,1}
 ```
 
