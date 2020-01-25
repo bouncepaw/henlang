@@ -78,63 +78,72 @@
 
 ;; TODO: fix it so it works
 (define (peck-name σ)
-  (define special-chars (map car token-table))
-  (define one-char-names
-    (string->list "⊤⊥∅+-/*^√=<>≤≥_∈∉∋∌∧∨∪∖∩∀∃"))
-  ;; No λ!
-  (define greek-letters
-    (string->list "ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω"))
-  (define suffices (list "?" "!"))
-  (define (normal-char? γ)
-    (and (not (member γ special-chars))
-         (not (member γ one-char-names))
-         (not (member γ greek-letters))
-         (not (member γ suffices))
-         (not (char=? γ #\→))))
-  (define (count-while-σ s p _id)
-    (let loop ((id _id))
-      (print "iteration")
-      (if (p (string-ref s id))
-          (loop (+ 1 id))
-          id)))
-  (define ((member-λ lst) el) (member el lst))
+  (print "pecking" σ "\n")
   ;; A name follows one of the schemes:
+  ;; | greek_letter* 1char_name suffix?
   ;; | greek_letter* normal_char* suffix?
   ;; | greek_letter* normal_char* rarrow greek_letter* normal_char* suffix?
-  ;; | greek_letter* 1char_name suffix?
   ;;
   ;; Let's walk along and decide what's in the name and what's not.
-  ;; First of all, any name may contain any number of greek letters.
-  (define len (count-while-σ σ (member-λ greek-letters) 0))
-  (print len)
-  ;; Then, we fork to two rails.
-  (if (member (string-ref σ len) one-char-names)
+  ;; Some helpers:
+  (define ((member-λ lst) el) (member el lst))
+  (define (count-while-σ p start-id)
+    (let loop ((id start-id))
+      (if (p (string-ref σ id))
+          (loop (+ 1 id))
+          id)))
+  ;; Store length of the name to be taken from σ in len.
+  (define len 0)
+  ;; Any name may start with any number of greek letters (except of λ).
+  (define greek?
+    (-> "ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω"
+        string->list
+        member-λ))
+  (set! len (count-while-σ greek? len))
+  ;; Names can't end with a greek letter now. If there is a delimeter next,
+  ;; panic.
+  (define delimeter?
+    (-> car
+        (map token-table)
+        (append (string->list " \t\r"))
+        member-λ))
+  (when (delimeter? (string-ref σ len))
+    (error 'peck-name "Name cannot end with a greek letter"
+           (substring σ 0 (+ 1 len))))
+  ;; Now, we have two ways: one one-char-name or any number of normal chars.
+  ;; The normal char seq may be followed by a rarrow and another cluster of
+  ;; greek and normal chars. Either of the ways may end with a suffix.
+  (define one-char-name?
+    (-> "⊤⊥∅+-/*^√=<>≤≥_∈∉∋∌∧∨∪∖∩∀∃"
+        string->list
+        member-λ))
+  (define suffix?
+    (-> "?!"
+        string->list
+        member-λ))
+  (define (rarrow? c) (char=? c #\→))
+  (define (normal-char? c)
+    (not (or (greek? c)
+             (delimeter? c)
+             (suffix? c)
+             (rarrow? c))))
+
+  (if (-> σ (string-ref (+ 1 len)) one-char-name?)
+      (set! len (+ 1 len))
       (begin
-        (set! len (+ 1 len))
-        ;; Here may be a suffix
-        (if (member (string-ref σ (+ 1 len)) suffices)
-            (set! len (+ 1 len)))
-        ;; Anyway, return it the name
-        (cons (substring σ 0 len) (substring σ len)))
-      (begin
-        ;; Any number of normal chars here.
-        (set! len (count-while-σ σ normal-char? len))
-        ;; Here we fork.
-        (if (char=? #\→ (string-ref σ len))
-            (begin
-              ;; Greek letters may be here
-              (set! len (count-while-σ σ (member-λ greek-letters) len))
-              ;; Normal chars may be here
-              (set! len (count-while-σ σ normal-char? len))
-              ;; Here may be a suffix
-              (if (member (string-ref σ (+ 1 len)) suffices)
-                  (set! len (+ 1 len)))
-              (cons (substring σ 0 len) (substring σ len)))
-            (begin
-              ;; Here may be a suffix. If not, one char back.
-              (if (-> σ (string-ref len) (member suffices) not)
-                  (set! len (- len 1)))
-              (cons (substring σ 0 len) (substring σ len)))))))
+        (set! len (count-while-σ normal-char? len))
+        ;; There may be a rarrow!
+        (when (and #;(> (string-length σ) len)
+                   (-> σ (string-ref len) rarrow?))
+          (print "aaa")
+          (set! len (+ 2 len))
+          (set! len (count-while-σ greek? len))
+          (set! len (count-while-σ normal-char? len)))))
+  ;; Whatever happened, there may be a suffix:
+  (when (-> σ (string-ref (+ 1 len)) suffix?)
+    (set! len (+ 1 len)))
+  (cons (substring σ 0 (+ 1 len)) (substring σ (+ 1 len)))
+  )
 
 
 (define token-table
@@ -190,6 +199,10 @@
           (loop rest
                 (cons (cons 'name name-itself) acc)))]
       )))
+
+;; Add extra newline at end of source string. It eases lexing a lot!
+(define (add-safety-belt σ)
+  (string-append/shared σ "\n"))
 
 (define text (read-string #f (open-input-file "example.hen")))
 (pretty-print (σ→tokens text))
