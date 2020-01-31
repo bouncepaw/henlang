@@ -18,3 +18,25 @@
     ["\\\\" #\\]
     [_ (string-ref c 0)]))
 
+(define (group-blocks tokens)
+  (let loop [(rest tokens) (acc '()) (blocks '())]
+    (if (null? rest)
+      (reverse acc)
+      (match (caar rest)
+        ['block-open
+         (loop (cdr rest) acc (cons '(block) blocks))]
+        ['block-close
+         (loop (cdr rest)
+               (cons (-> blocks car reverse) acc)
+               (cdr blocks))]
+        [_
+          (if (null? blocks)
+            (loop (cdr rest)
+                  (cons (car rest) acc)
+                  blocks)
+            (loop (cdr rest)
+                  acc
+                  (cons (cons (car rest) (car blocks))
+                        (cdr blocks))))]))
+    ))
+

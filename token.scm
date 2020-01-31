@@ -123,6 +123,7 @@
     (#\(       paren-open    ,peck-none)
     (#\)       paren-close   ,peck-none)
     (#\,       comma         ,peck-none)
+    (#\\       backslash     ,peck-none)
     (#\←       op-assign     ,peck-none)
     (#\'       op-quote      ,peck-none)
     (#\:       op-cons       ,peck-none)
@@ -170,5 +171,11 @@
   (string-append/shared σ "\n"))
 
 (define text (read-string #f (open-input-file "example.hen")))
-(pretty-print (σ→tokens (add-safety-belt text)))
+(load "preprocess.scm")
+(-> text
+    add-safety-belt
+    σ→tokens
+    group-blocks
+    pretty-print)
+
 
