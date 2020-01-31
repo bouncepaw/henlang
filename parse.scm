@@ -6,6 +6,9 @@
 
 ;; this one's complicated
 
+(define (τ-literal? τ)
+  (-> τ caar (member '(string character number unlambda quoted))))
+
 (define (parse-list nexts)
   (let loop [[rest nexts] [acc '()]]
     (cond
