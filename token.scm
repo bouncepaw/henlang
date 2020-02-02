@@ -37,8 +37,8 @@
 (define (peck-character σ)
   (define-values (char rest)
     (if (char=? #\\ (string-ref σ 1))
-        (values (substring σ 1 3) (substring 3))
-        (values (substring σ 1 2) (substring 2))))
+        (values (substring σ 1 3) (substring σ 3))
+        (values (substring σ 1 2) (substring σ 2))))
   (cond
     [(member char (list "\\b" "\\f" "\\n" "\\r" "\\t" "\\v" "\\s" "\\\\"))
      (cons char rest)]
@@ -56,8 +56,8 @@
   (let next-char ((id 1))
     (cond
       [(char=? (string-ref σ id) #\")
-       (cons (substring σ 1 (+ 1 id))
-             (substring σ (+ 2 id)))]
+       (cons (substring σ 1 id)
+             (substring σ (+ 1 id)))]
       [(string-prefix? "\\\"" (substring σ id))
        (next-char (+ 2 id))]
       [else
@@ -165,17 +165,4 @@
           (loop rest
                 (cons (cons 'name name-itself) acc)))]
       )))
-
-;; Add extra newline at end of source string. It eases lexing a lot!
-(define (add-safety-belt σ)
-  (string-append/shared σ "\n"))
-
-(define text (read-string #f (open-input-file "example.hen")))
-(load "preprocess.scm")
-(-> text
-    add-safety-belt
-    σ→tokens
-    group-blocks
-    pretty-print)
-
 

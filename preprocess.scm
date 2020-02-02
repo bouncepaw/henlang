@@ -7,36 +7,24 @@
 ;; During lexing, characters are taken as strings. This function transforms
 ;; them to Scheme's characters.
 (define (characterify c)
-  (match c
-    ["\\b" #\alarm]
-    ["\\f" #\x000C] ; form feed
-    ["\\n" #\newline]
-    ["\\r" #\x000D] ; carriage return
-    ["\\t" #\tab]
-    ["\\v" #\x0008] ; vertical tabulation
-    ["\\s" #\space]
-    ["\\\\" #\\]
-    [_ (string-ref c 0)]))
+  (if (and (pair? c) (eq? 'character (car c)))
+    (match (cdr c)
+      ["\\b" #\alarm]
+      ["\\f" #\x000C] ; form feed
+      ["\\n" #\newline]
+      ["\\r" #\x000D] ; carriage return
+      ["\\t" #\tab]
+      ["\\v" #\x0008] ; vertical tabulation
+      ["\\s" #\space]
+      ["\\\\" #\\]
+      [_ (string-ref c 0)])
+    c))
 
-(define (group-blocks tokens)
-  (let loop [(rest tokens) (acc '()) (blocks '())]
-    (if (null? rest)
-      (reverse acc)
-      (match (caar rest)
-        ['block-open
-         (loop (cdr rest) acc (cons '(block) blocks))]
-        ['block-close
-         (loop (cdr rest)
-               (cons (-> blocks car reverse) acc)
-               (cdr blocks))]
-        [_
-          (if (null? blocks)
-            (loop (cdr rest)
-                  (cons (car rest) acc)
-                  blocks)
-            (loop (cdr rest)
-                  acc
-                  (cons (cons (car rest) (car blocks))
-                        (cdr blocks))))]))
-    ))
+(define (numerify c)
+  (if (and (pair? c) (eq? 'number (car c)))
+    (string->number (cdr c))
+    c))
+
+(define (preprocess tokens)
+  (map (o numerify characterify) tokens))
 
