@@ -118,5 +118,42 @@
     [else
       (parse-extra-newlines (cons (car nexts) prevs) (cdr nexts))]
     ))
+
+;; There are two types of `heads´: lambda and let ones.
+;; Let's look at their structures:
+;; head----+ +--tail
+;; |       | |     |
+;; λ a, b, c { ... }
+;; λ         { ... }
+;;
+;; head-+ +neck-+ +--tail
+;; |    | |     | |     |
+;; ¤ loop [ ... ] { ... }
+;; ¤      [ ... ] { ... }
+;; ¤ loop         { ... }
+;; ¤              { ... }
+;;
+;; This function creates head tokens.
+(define (parse-heads prevs nexts)
+  (cond
+    [(null? nexts)
+     (cons (reverse prevs) nexts)]
+    ;; Let head parsing.
+    [(and (τ-next-type=?      nexts  'op-let)
+          (τ-next-type=? (cdr nexts) 'name))
+     (parse-heads (cons (cons 'let-head (cdadr nexts))
+                        prevs)
+                  (cddr nexts))]
+    [(and (τ-next-type=? nexts 'op-let)
+          (not (or (τ-next-type=? (cdr nexts) 'list-open)
+                   (τ-next-type=? (cdr nexts) 'block-open))))
+     (error 'parse-heads "Unexpected token in let" (take nexts 10))]
+    [(τ-next-type=? nexts 'op-let)
+     (parse-heads (cons (cons 'let-head '())
+                        prevs)
+                  (cdr nexts))]
+    [else
+      (parse-heads (cons (car nexts) prevs) (cdr nexts))]
+    ))
 
 

@@ -1,9 +1,7 @@
-% This is an example program in henlang!
-% At current stage of development, this text should tokenize successfully.
-kek1(
-  lol,
-  flex
-)
+¤ name [] {}
+¤ [] {}
+¤ name {}
+¤ {}
 cons←λa,b{
   λop
   {

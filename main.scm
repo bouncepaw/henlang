@@ -14,5 +14,7 @@
     car
     (as-> n (parse-extra-newlines '() n))
     car
+    (as-> n (parse-heads '() n))
+    car
     pretty-print)
 
