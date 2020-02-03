@@ -69,5 +69,54 @@
         [else
           (parse-unaries (cons (car nexts) prevs) (cdr nexts))]
         )]))
+
+(define (parse-extra-newlines prevs nexts)
+  (define (cons-maybe pair-new pair-old)
+    (if (null? pair-new)
+        pair-old
+        (cons pair-new pair-old)))
+  (cond
+    [(null? nexts)
+     (cons (reverse prevs) nexts)]
+    [(and (or (eq? 'newline (caar nexts))
+              (eq? 'newline (caadr nexts)))
+          (> (length nexts) 1))
+     (let* [[should-move-by-1? #f]]
+       ;; TODO: magically not works
+       ;; some errors found.
+       ;; commit: stripping extra newlines
+       (parse-extra-newlines
+         (cons-maybe
+           (match (take nexts 2)
+             ;; Ignore newlines around {}
+             [(('block-open . "") ('newline . ""))
+              (cons 'block-open "")]
+             [(('block-close . "") ('newline . ""))
+              (cons 'block-close "")]
+             [(('comma . "") ('newline . ""))
+              (cons 'comma "")]
+             [(('paren-open . "") ('newline . ""))
+              (cons 'paren-open "")]
+             [(('newline . "") ('block-close . ""))
+              (set! should-move-by-1? #t)
+              '()]
+             [(('newline . "") ('block-open . ""))
+              (set! should-move-by-1? #t)
+              '()]
+             [(('newline . "") ('comma . ""))
+              (set! should-move-by-1? #t)
+              '()]
+             [(('newline . "") ('paren-close . ""))
+              (set! should-move-by-1? #t)
+              '()]
+             [else
+               (set! should-move-by-1? #t)
+               (car nexts)]
+             )
+           prevs)
+         ((if should-move-by-1? cdr cddr) nexts)))]
+    [else
+      (parse-extra-newlines (cons (car nexts) prevs) (cdr nexts))]
+    ))
 
 

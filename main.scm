@@ -11,5 +11,8 @@
     add-safety-belt
     σ→tokens
     (as-> n (parse-unaries '() n))
+    car
+    (as-> n (parse-extra-newlines '() n))
+    car
     pretty-print)
 

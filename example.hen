@@ -1,17 +1,12 @@
 % This is an example program in henlang!
 % At current stage of development, this text should tokenize successfully.
-'nameName
-"string"name
-no newline \
-here
-132
-`\n
-% Names test
-kek
-kek1(lol, flex)
-another
+kek1(
+  lol,
+  flex
+)
 cons←λa,b{
-  λop{
+  λop
+  {
     a op(b)
   }
 }

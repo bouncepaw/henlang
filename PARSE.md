@@ -6,6 +6,16 @@ I've never parsed before. In this document I'll outline how it should be done.
 
 There's nothing complicated about them: strings, characters, numbers, unlambdas, quotes. One of them can't be followed by another one.
 
+## Newlines
+
+They are insignificant:
+
+- Before/after brace.
+- After open paren. Before close paren.
+- Before/after comma.
+
+Insignificance is more important than significance.
+
 ## Composition
 
 It is not clear if this composition has capital composee unless first element has minuscule arguments (then it does not) or the first composee is a literal (then it does, it is the first composee).
@@ -17,7 +27,7 @@ a(d) b → (comp (comp (a d) b))
 'x 'a b → ERROR, not expected symbol after symbol
 ```
 
-Composition breaks by any operator or separator except of backslash followed by a newlite.
+Composition breaks by any operator or separator except of backslash followed by a newline.
 
 ```
 a b ⇒ k d a ; z o →
