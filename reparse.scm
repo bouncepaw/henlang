@@ -138,10 +138,16 @@
   (cond
     [(null? nexts)
      (cons (reverse prevs) nexts)]
+    ;; Lambda head parsing.
+    [(τ-next-type=? nexts 'op-lambda)
+     (let* [[res (%lambda/head nexts)]
+            [new-nexts (car res)]
+            [head (cdr res)]]
+       (parse-heads (cons head prevs) new-nexts))]
     ;; Let head parsing.
     [(and (τ-next-type=?      nexts  'op-let)
           (τ-next-type=? (cdr nexts) 'name))
-     (parse-heads (cons (cons 'let-head (cdadr nexts))
+     (parse-heads (cons (cons 'let-head (string->symbol (cdadr nexts)))
                         prevs)
                   (cddr nexts))]
     [(and (τ-next-type=? nexts 'op-let)
@@ -155,5 +161,78 @@
     [else
       (parse-heads (cons (car nexts) prevs) (cdr nexts))]
     ))
+
+(define (%lambda/head nexts)
+  (let loop [[rest (cdr nexts)] [args '()]]
+    (cond
+      [(τ-next-type=? rest 'comma)
+       (loop (cdr rest) args)]
+      [(τ-next-type=? rest 'block-open)
+       (unless (%lambda/args-ok? args)
+         (error '%lambda/head "Only last argument can be a tail argument"
+                args))
+       (cons rest
+             (cons 'lambda-head
+                   (%lambda/preprocess-args args)))]
+      [(τ-next-type=? rest 'name)
+       (let* [[res (%lambda/arg rest)]
+              [arg (car res)]
+              [new-rest (cdr res)]]
+         (loop new-rest (cons arg args)))]
+      [else
+        (error '%lambda/head "Unexpected token at lambda definition"
+               (take nexts 10) (take rest 10) args)])))
 
+;; Only last arg can be a tail. List of args come here reversed (with first
+;; element being the may-be tail).
+(define (%lambda/args-ok? args)
+  ;; tailiness is stored in car as a boolean.
+  (define tail? car)
+  (or (= (count tail? args) 0)
+      (and (= (count tail? args) 1)
+           (tail? (car args)))))
+
+;; Either of the forms:
+;; ? name ,
+;; ? name {
+;; name ,
+;; name {
+(define (%lambda/arg nexts)
+  (define ((τ=?-λ τ) x) (eq? τ (car x)))
+  (define block-open? (τ=?-λ 'block-open))
+  (define comma?      (τ=?-λ 'comma))
+  (define name?       (τ=?-λ 'name))
+  (define (question? x) (eq? "?" (cdr x)))
+  (match (take nexts 3)
+    [((? name? question? ques)
+      (? name?           name)
+      (or (? block-open? delim)
+          (? comma?      delim)))
+     (cons (cons #t (cdr name)) (cddr nexts))]
+    ;; when not tail arg
+    [((? name?           ('name . name))
+      (or (? block-open? delim)
+          (? comma?      delim))
+      _)
+     (cons (cons #f name) (cdr nexts))]
+    [_
+      (print "end of world")]
+    ))
+
+(define (proper->dotted lst)
+  (cond
+    [(= 1 (length lst))
+     (car lst)]
+    [(eq? '() (cddr lst))
+     (cons (car lst) (cadr lst))]
+    [else
+      (cons (car lst) (proper->dotted (cdr lst)))]))
+
+(define (%lambda/preprocess-args args)
+  (let* [[extract-arg (o string->symbol cdr)]
+         [tailed?     (caar args)]
+         [dot-reverse (o proper->dotted reverse)]]
+    (cond
+      [tailed? (dot-reverse (map extract-arg args))]
+      [else (reverse (map extract-arg args))])))
 

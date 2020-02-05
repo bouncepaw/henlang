@@ -1,7 +1,3 @@
-¤ name [] {}
-¤ [] {}
-¤ name {}
-¤ {}
 cons←λa,b{
   λop
   {
@@ -10,3 +6,9 @@ cons←λa,b{
 }
 car←λa,b{ a }
 cdr←λa,b{ b }
+λx,?xs { }
+λ?xs { }
+¤ name [] {}
+¤ [] {}
+¤ name {}
+¤ {}
