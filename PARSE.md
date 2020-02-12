@@ -2,6 +2,52 @@
 
 I've never parsed before. In this document I'll outline how it should be done.
 
+## Parsing nest
+
+```
+λ a, b, c { a b(c a) }
+is
+λ a , b , c {
+     a b (
+             c a
+     )
+}
+```
+
+It is required to compose properly. You can't compose until subcomposees
+are composed. This parser introduces special token nest. The above is
+expressed as
+
+```
+('nest #f (λ 'a 'b 'c) 'open-block
+  ('nest #f 'a 'b 'open-paren
+    ('nest #f 'c 'a)
+    'close-paren
+ 'close-block)
+```
+
+`cadr` of `nest` is boolean. If true, this nest object is composed already. Else, it can be composed further. Step by step:
+
+```
+('nest #f (λ 'a 'b 'c) 'open-block
+  ('nest #f 'a 'b 'open-paren
+    ('nest #t (comp (c) (a)))
+    'close-paren)
+  'close-block)
+```
+
+```
+('nest #f (λ 'a 'b 'c) 'open-block
+  ('nest #t (comp (a) (b (comp (c) (a)))))
+  'close-block)
+```
+
+```
+('nest #t (λ 'a 'b 'c)
+  ('block
+    (comp (a) (b (comp (c) (a))))))
+```
+
 ## Literals
 
 There's nothing complicated about them: strings, characters, numbers, unlambdas, quotes. One of them can't be followed by another one.

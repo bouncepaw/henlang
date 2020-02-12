@@ -16,5 +16,6 @@
     car
     (as-> n (parse-heads '() n))
     car
+    (parse-nest '(()))
     pretty-print)
 

@@ -82,9 +82,6 @@
               (eq? 'newline (caadr nexts)))
           (> (length nexts) 1))
      (let* [[should-move-by-1? #f]]
-       ;; TODO: magically not works
-       ;; some errors found.
-       ;; commit: stripping extra newlines
        (parse-extra-newlines
          (cons-maybe
            (match (take nexts 2)
@@ -235,4 +232,41 @@
     (cond
       [tailed? (dot-reverse (map extract-arg args))]
       [else (reverse (map extract-arg args))])))
+
+;; TODO: make it nest cool!
+(define (τ-matching? τ1 τ2)
+  (match (list τ1 τ2)
+         [('block-open 'block-close) #t]
+         [('list-open 'list-close) #t]
+         [('paren-open 'paren-close) #t]
+         [_ #f]))
+
+(define push xcons)
+(define (push-push layers v)
+  (cons (cons v (car layers))
+        (cdr layers)))
+(define (layer-pack layer)
+  (cons* 'nest #f (reverse layer)))
+
+;; layers is FIFO.
+;; layer is pair: car is type ('{block list paren}-open), cdr is contents
+;; Once layer is finished, it is added to the previous one. If there is no,
+;; algo is finished.
+(define (parse-nest nexts layers)
+  (if (null? nexts)
+      (reverse (car layers))
+      (case (caar nexts)
+        [(block-open paren-open list-open)
+         (parse-nest (cdr nexts)
+                     (-> layers (push-push (car nexts)) (push '())))]
+        [(block-close paren-close list-close)
+         (unless (τ-matching? (caaadr layers) (caar nexts))
+           (error 'parse-nest "Mismatched pairs" (caaadr layers) (caar nexts)))
+         (parse-nest (cdr nexts)
+                     (-> layers cdr
+                         (push-push (layer-pack (car layers)))
+                         (push-push (car nexts))))]
+        [else
+          (parse-nest (cdr nexts)
+                      (push-push layers (car nexts)))])))
 
