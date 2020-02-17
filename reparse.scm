@@ -85,6 +85,9 @@
        (parse-extra-newlines
          (cons-maybe
            (match (take nexts 2)
+             ;; Ignore newline after →
+             [(('op-assign . "") ('newline . ""))
+              (cons 'op-assign "")]
              ;; Ignore newlines around {}
              [(('block-open . "") ('newline . ""))
               (cons 'block-open "")]
@@ -116,8 +119,11 @@
       (parse-extra-newlines (cons (car nexts) prevs) (cdr nexts))]
     ))
 
-;; There are two types of `heads´: lambda and let ones.
+;; There are three types of `heads´: assign, lambda and let ones.
 ;; Let's look at their structures:
+;; head  tail
+;; |  |  |
+;; a  ←  b
 ;; head----+ +--tail
 ;; |       | |     |
 ;; λ a, b, c { ... }
@@ -135,6 +141,10 @@
   (cond
     [(null? nexts)
      (cons (reverse prevs) nexts)]
+    ;; Assign head parsing.
+    [(τ-next-type=? nexts 'op-assign)
+     (let* [[head `(assign-head ,(string->symbol (cdar prevs)))]]
+       (parse-heads (cons head (cdr prevs)) (cdr nexts)))]
     ;; Lambda head parsing.
     [(τ-next-type=? nexts 'op-lambda)
      (let* [[res (%lambda/head nexts)]
@@ -233,7 +243,6 @@
       [tailed? (dot-reverse (map extract-arg args))]
       [else (reverse (map extract-arg args))])))
 
-;; TODO: make it nest cool!
 (define (τ-matching? τ1 τ2)
   (match (list τ1 τ2)
          [('block-open 'block-close) #t]
@@ -269,4 +278,8 @@
         [else
           (parse-nest (cdr nexts)
                       (push-push layers (car nexts)))])))
-
+
+;; TODO: implement
+;; this thing composes all things composable
+(define (parse-composition prevs nexts)
+  nexts)

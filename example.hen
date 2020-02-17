@@ -1,4 +1,5 @@
-cons←λa,b{
+cons←
+λa,b{
   λop
   {
     a op(b)
