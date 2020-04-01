@@ -1,15 +1,30 @@
-cons←
-λa,b{
-  λop
-  {
-    a op(b)
+%include что-нибудь
+%create a simple class
+123
+01
+1205.54
+052.31
+\ { empty lambda } `c `\n `  `\j
+animal_new := \species σ?, sentient? bool? {
+  hunger := 100
+  \method {
+    fi;
+    if '
+      method =('thinks?) => [
+        if sentient? => 'thinks; 'does-not-think fi
+      ];
+      method =('feed) => [
+        if hunger >(0) => [hunger := hunger -(1)] fi
+        hunger
+      ];
+      "No such method " σ+(method σnew) E
+    fi
   }
 }
-car←λa,b{ a }
-cdr←λa,b{ b }
-λx,?xs { }
-λ?xs { }
-¤ name [] {}
-¤ [] {}
-¤ name {}
-¤ {}
+dog := "dog" animal_new(F)
+'thinks? dog $  % 'does-not-think
+'feed dog
+
+D N N(1, 2, 3) D(21, I("abba"), dali) D "ek
+pognali\""
+
